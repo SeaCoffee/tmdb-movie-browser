@@ -1,35 +1,41 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from 'react-router-dom';
 
+import { paginationConstants } from '../constants/appConstants';
 
 interface UsePageQueryReturn {
-    page: string | null;
-    prevPage: () => void;
-    nextPage: () => void;
+  page: number;
+  prevPage: () => void;
+  nextPage: () => void;
+  setPage: (page: number) => void;
 }
 
 export const usePageQuery = (): UsePageQueryReturn => {
-    const [query, setQuery] = useSearchParams({ page: '1' });
+  const [query, setQuery] = useSearchParams({
+    page: String(paginationConstants.defaultPage),
+  });
 
-    const page = query.get('page');
-    console.log('Current page', page);
+  const currentPage = Number(query.get('page')) || paginationConstants.defaultPage;
 
-    const prevPage = () => {
-        const newQuery = new URLSearchParams(query);
-        newQuery.set('page', Math.max(1, Number(newQuery.get('page')) - 1).toString());
-        setQuery(newQuery);
-        console.log('Previous:', newQuery.get('page'));
-    };
+  const setPage = (page: number) => {
+    const safePage = Math.max(paginationConstants.minPage, page);
+    const newQuery = new URLSearchParams(query);
 
-    const nextPage = () => {
-        const newQuery = new URLSearchParams(query);
-        newQuery.set('page', (Number(newQuery.get('page')) + 1).toString());
-        setQuery(newQuery);
-        console.log('Next page', newQuery.get('page'));
-    };
+    newQuery.set('page', String(safePage));
+    setQuery(newQuery);
+  };
 
-    return {
-        page,
-        prevPage,
-        nextPage
-    };
+  const prevPage = () => {
+    setPage(currentPage - 1);
+  };
+
+  const nextPage = () => {
+    setPage(currentPage + 1);
+  };
+
+  return {
+    page: currentPage,
+    prevPage,
+    nextPage,
+    setPage,
+  };
 };

@@ -1,64 +1,103 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
-import {MoviesListCard} from "../MovieListCardComponent/MovieListCardComponent";
-import {genresService} from "../../services/axiosService";
-import {GenreSelector} from "../GenresSelectorComponent/GenresSelectorComponent";
-import {usePageQuery} from "../../services/pagination";
-import {moviesService} from "../../services/axiosService";
-import {Movie, Genre} from "../../services/axiosService";
+import { MoviesListCard } from '../MovieListCardComponent/MovieListCardComponent';
+import { GenreSelector } from '../GenresSelectorComponent/GenresSelectorComponent';
+import { usePageQuery } from '../../services/pagination';
+import {
+  moviesService,
+  genresService,
+  Movie,
+  Genre,
+} from '../../services/axiosService';
 
-
+import styles from './MovieGenreList.module.css';
 
 export const MovieGenreList: React.FC = () => {
-    const [genres, setGenres] = useState<Genre[]>([]);
-    const [selectedGenre, setSelectedGenre] = useState<string>('');
-    const [movies, setMovies] = useState<Movie[]>([]);
-    const [genreDictionary, setGenreDictionary] = useState<{ [key: string]: string }>({});
-    const { page, prevPage, nextPage } = usePageQuery();
-    const handleGenreSelect = (genreId: number) => {
-        setSelectedGenre(genreId.toString());
-    };
+  const { page, prevPage, nextPage } = usePageQuery();
 
-    useEffect(() => {
-        genresService.getAll().then(({ data }) => {
-            setGenres(data.genres);
-            const dictionary: { [key: string]: string } = {};
-            data.genres.forEach((genre: Genre) => {
-                dictionary[genre.id.toString()] = genre.name;
-            });
-            setGenreDictionary(dictionary);
-        }).catch(error => console.error('Error:', error));
-    }, []);
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<number | null>(null);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        const fetchMovies = async () => {
-            try {
-                const pageNumber = page ? parseInt(page, 10) : 1;
-                const response = !selectedGenre
-                    ? await moviesService.getAll(pageNumber)
-                    : await genresService.getMoviesByGenre(parseInt(selectedGenre, 10), pageNumber);
-                setMovies(response.data.results);
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        };
+  const genreDictionary = useMemo(() => {
+    return genres.reduce<Record<number, string>>((acc, genre) => {
+      acc[genre.id] = genre.name;
+      return acc;
+    }, {});
+  }, [genres]);
 
-        fetchMovies();
-    }, [selectedGenre, page]);
+  useEffect(() => {
+    genresService
+      .getAll()
+      .then(({ data }) => {
+        setGenres(data.genres);
+      })
+      .catch((error) => {
+        console.error('Error loading genres:', error);
+      });
+  }, []);
 
-    return (
-        <div>
-            <GenreSelector genres={genres} onGenreSelect={handleGenreSelect} />
-            <div className="movies-container">
-                {movies.map((movie) => (
-                    <MoviesListCard key={movie.id} movie={movie} genreDictionary={genreDictionary} />
-                ))}
-            </div>
-            <div>
-                <button onClick={prevPage}>Previous</button>
-                <span>Page {page}</span>
-                <button onClick={nextPage}>Next</button>
-            </div>
+  useEffect(() => {
+    setIsLoading(true);
+
+    const request = selectedGenre
+      ? genresService.getMoviesByGenre(selectedGenre, page)
+      : moviesService.getAll(page);
+
+    request
+      .then(({ data }) => {
+        setMovies(data.results);
+      })
+      .catch((error) => {
+        console.error('Error loading movies:', error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [selectedGenre, page]);
+
+  return (
+    <section className={styles.wrapper}>
+      <GenreSelector
+        genres={genres}
+        onGenreSelect={setSelectedGenre}
+      />
+
+      {isLoading ? (
+        <div className={styles.message}>Loading movies...</div>
+      ) : (
+        <div className={styles.grid}>
+          {movies.map((movie) => (
+            <MoviesListCard
+              key={movie.id}
+              movie={movie}
+              genreDictionary={genreDictionary}
+            />
+          ))}
         </div>
-    );
+      )}
+
+      <div className={styles.pagination}>
+        <button
+          type="button"
+          className={styles.pageButton}
+          onClick={prevPage}
+          disabled={page <= 1}
+        >
+          Previous
+        </button>
+
+        <span className={styles.pageInfo}>Page {page}</span>
+
+        <button
+          type="button"
+          className={styles.pageButton}
+          onClick={nextPage}
+        >
+          Next
+        </button>
+      </div>
+    </section>
+  );
 };

@@ -1,35 +1,39 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
-import {Genre} from "../../services/axiosService";
+import { Genre } from '../../services/axiosService';
 
-
+import styles from './GenresSelectorComponent.module.css';
 
 interface GenreSelectorProps {
-    genres: Genre[];
-    onGenreSelect: (genreId: number) => void;
+  genres: Genre[];
+  onGenreSelect: (genreId: number) => void;
 }
 
-export const GenreSelector: React.FC<GenreSelectorProps> = ({ genres, onGenreSelect }) => {
-    const navigate = useNavigate();
-
-
+export const GenreSelector: React.FC<GenreSelectorProps> = ({
+  genres,
+  onGenreSelect,
+}) => {
+  if (genres.length === 0) {
     return (
-        <div>
-            <ul className="genre-list">
-                {genres.map(genre => {
-                    console.log(`Rendering genre: ${genre.name}`);
-                    return (
-                        <li key={genre.id} style={{ cursor: 'pointer' }} onClick={() => { navigate(`/genres/${genre.id}`); }}>
-                            {genre.name}
-                        </li>
-
-                    );
-                })}
-            </ul>
-        </div>
+      <div className={styles.empty}>
+        Genres are not available.
+      </div>
     );
+  }
+
+  return (
+    <ul className={styles.list}>
+      {genres.map((genre) => (
+        <li key={genre.id}>
+          <button
+            type="button"
+            className={styles.button}
+            onClick={() => onGenreSelect(genre.id)}
+          >
+            {genre.name}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
 };
-
-
-

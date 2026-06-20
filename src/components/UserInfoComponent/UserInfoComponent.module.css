@@ -1,0 +1,36 @@
+.user {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  color: #e2e8f0;
+}
+
+.avatar,
+.avatarFallback {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+}
+
+.avatar {
+  object-fit: cover;
+}
+
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  color: #111827;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.name {
+  max-width: 110px;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

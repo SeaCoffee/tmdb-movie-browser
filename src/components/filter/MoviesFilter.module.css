@@ -1,0 +1,20 @@
+.wrapper {
+  display: grid;
+  gap: 28px;
+}
+
+.panel {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(14px);
+}
+
+.loading {
+  color: #cbd5e1;
+  font-size: 14px;
+}

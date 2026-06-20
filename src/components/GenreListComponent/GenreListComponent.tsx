@@ -1,31 +1,36 @@
 import React from 'react';
 
-import {MoviesListCard} from "../MovieListCardComponent/MovieListCardComponent";
-import {Movie} from "../../services/axiosService";
+import { MoviesListCard } from '../MovieListCardComponent/MovieListCardComponent';
+import { Movie } from '../../services/axiosService';
+
+import styles from './GenreListComponent.module.css';
 
 export interface GenreListComponentProps {
-    genreId?: number;
-    movies: Movie[];
-    genreDictionary: { [key: number]: string };
+  movies: Movie[];
+  genreDictionary: Record<number, string>;
 }
 
-
-export interface GenreDictionary {
-    [key: string]: string;
-}
-
-
-
-export const GenreListComponent: React.FC<GenreListComponentProps> = ({ movies, genreDictionary }) => {
-    console.log('Rendering GenreListComponent with movies:', movies);
-    console.log('Movies to render:', movies);
-
+export const GenreListComponent: React.FC<GenreListComponentProps> = ({
+  movies,
+  genreDictionary,
+}) => {
+  if (movies.length === 0) {
     return (
-        <div>
-            {movies.map(movie => {
-                console.log('Rendering movie:', movie.title);
-                return <MoviesListCard key={movie.id} movie={movie} genreDictionary={genreDictionary} />;
-            })}
-        </div>
+      <div className={styles.empty}>
+        No movies found for this genre.
+      </div>
     );
+  }
+
+  return (
+    <div className={styles.grid}>
+      {movies.map((movie) => (
+        <MoviesListCard
+          key={movie.id}
+          movie={movie}
+          genreDictionary={genreDictionary}
+        />
+      ))}
+    </div>
+  );
 };

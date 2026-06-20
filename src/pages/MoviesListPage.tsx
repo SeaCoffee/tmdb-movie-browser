@@ -1,14 +1,11 @@
-import React from "react";
-
-import {MoviesListComponent} from "../components/MoviesListComponent/MoviesListComponent";
-
+import { MoviesListComponent } from '../components/MoviesListComponent/MoviesListComponent';
 
 const MoviesListPage: React.FC = () => {
-    return (
-        <div>
-            <MoviesListComponent />
-        </div>
-    );
+  return (
+    <main className="page-shell">
+      <MoviesListComponent />
+    </main>
+  );
 };
 
-export default MoviesListPage
+export default MoviesListPage;

@@ -1,44 +1,57 @@
-import {useState, useEffect} from "react";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
-import {GenreSelector} from "../GenresSelectorComponent/GenresSelectorComponent";
-import {SearchBar} from "../SearchBarComponent/SearchBarComponent";
-import {MoviesListComponent} from "../MoviesListComponent/MoviesListComponent";
-import {genresService} from "../../services/axiosService";
-import { useNavigate } from 'react-router-dom';
+type Theme = 'light' | 'dark';
 
-interface Genre {
-    id: number;
-    name: string;
-}
-
-
-const MoviesFilter: React.FC = () => {
-    const [searchTerm, setSearchTerm] = useState<string>('');
-    const [genres, setGenres] = useState<Genre[]>([]);
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        genresService.getAll().then(({ data }) => {
-            setGenres(data.genres);
-        }).catch(error => {
-            console.error('Error loading genres:', error);
-        });
-    }, []);
-
-    const handleGenreSelect = (genreId: number) => {
-        console.log('navigate from filter')
-        navigate(`/genres/${genreId}`);
-    };
-
-    return (
-        <div>
-            <SearchBar onSearch={setSearchTerm} />
-            <GenreSelector genres={genres} onGenreSelect={handleGenreSelect} />
-            <MoviesListComponent searchTerm={searchTerm} />
-        </div>
-    );
+type ThemeContextType = {
+  theme: Theme;
+  toggleTheme: () => void;
 };
 
+export const ThemeContext = createContext<ThemeContextType>({
+  theme: 'light',
+  toggleTheme: () => {},
+});
 
-export default MoviesFilter;
+interface ThemeProviderProps {
+  children: ReactNode;
+}
 
+const THEME_STORAGE_KEY = 'movie-app-theme';
+
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+
+    return savedTheme === 'dark' ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    document.body.dataset.theme = theme;
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
+  const value = useMemo(
+    () => ({
+      theme,
+      toggleTheme: () => {
+        setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+      },
+    }),
+    [theme],
+  );
+
+  return (
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
+export const useTheme = () => useContext(ThemeContext);

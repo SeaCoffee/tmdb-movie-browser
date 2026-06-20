@@ -1,17 +1,19 @@
 import React from 'react';
 
-import {useTheme, ThemeContext} from "../context/ThemeContext";
-import {useContext} from "react";
+import { useTheme } from '../context/ThemeContext';
+
+import styles from './ThemeSwitcherComponent.module.css';
 
 export const ThemeSwitcher: React.FC = () => {
-    console.log('Rendering theme switcher');
+  const { theme, toggleTheme } = useTheme();
 
-    const { theme, toggleTheme } = useContext(ThemeContext);
-
-    return (
-        <button onClick={toggleTheme}>
-            Switch to {theme === 'light' ? 'Dark' : 'Light'} Theme
+  return (
+    <button
+      type="button"
+      className={styles.button}
+      onClick={toggleTheme}
+    >
+      {theme === 'light' ? 'Dark mode' : 'Light mode'}
     </button>
-);
+  );
 };
-

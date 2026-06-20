@@ -1,0 +1,13 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  color: #fbbf24;
+}
+
+.value {
+  color: #fde68a;
+  font-size: 12px;
+  font-weight: 900;
+}

@@ -1,87 +1,115 @@
-import {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
+import React, { useEffect, useState } from 'react';
 
-import {moviesService, genresService } from "../../services/axiosService";
-import {MoviesListCard} from "../MovieListCardComponent/MovieListCardComponent";
-import {usePageQuery} from "../../services/pagination";
-import {GenreDictionary} from "../GenreListComponent/GenreListComponent";
-import {Movie, Genre} from "../../services/axiosService";
-import {useTheme} from "../context/ThemeContext";
+import {
+  moviesService,
+  genresService,
+  searchService,
+  Movie,
+  Genre,
+} from '../../services/axiosService';
+import { MoviesListCard } from '../MovieListCardComponent/MovieListCardComponent';
+import { usePageQuery } from '../../services/pagination';
 
+import styles from './MoviesListComponent.module.css';
 
 interface MoviesListComponentProps {
-    selectedGenre?: number | null;
-    searchTerm?: string;
+  selectedGenre?: number | null;
+  searchTerm?: string;
 }
 
+export const MoviesListComponent: React.FC<MoviesListComponentProps> = ({
+  selectedGenre = null,
+  searchTerm = '',
+}) => {
+  const { page, prevPage, nextPage } = usePageQuery();
 
-export const MoviesListComponent: React.FC<MoviesListComponentProps> = ({ selectedGenre, searchTerm }) => {
-    const { page: queryPage, prevPage, nextPage } = usePageQuery();
-    const page = queryPage ? parseInt(queryPage, 10) : 1;
-    const navigate = useNavigate();
-    const [movies, setMovies] = useState<Movie[]>([]);
-    const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
-    const [genres, setGenres] = useState<GenreDictionary>({} as GenreDictionary);
-    const { theme } = useTheme();
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [genres, setGenres] = useState<Record<number, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-    const moviesListStyle = {
-        backgroundColor: theme === 'light' ? 'white' : 'black',
-        color: theme === 'light' ? 'black' : 'white',
-    };
+  useEffect(() => {
+    genresService
+      .getAll()
+      .then(({ data }) => {
+        const genresDict = data.genres.reduce<Record<number, string>>(
+          (acc, genre: Genre) => {
+            acc[genre.id] = genre.name;
+            return acc;
+          },
+          {},
+        );
 
-    useEffect(() => {
-        moviesService.getAll(page).then(({ data }) => {
-            setMovies(data.results);
-            setFilteredMovies(data.results);
-        });
+        setGenres(genresDict);
+      })
+      .catch((error) => {
+        console.error('Error loading genres:', error);
+      });
+  }, []);
 
-        genresService.getAll().then(({ data }) => {
-            if (data && data.genres) {
-                const genresDict = data.genres.reduce((acc: GenreDictionary, genre: Genre) => {
-                    acc[genre.id] = genre.name;
-                    return acc;
-                }, {} as GenreDictionary);
-                setGenres(genresDict);
-            }
-        });
-    }, [page]);
+  useEffect(() => {
+    setIsLoading(true);
+    setErrorMessage('');
 
-    useEffect(() => {
-        let filtered = movies;
+    const request = searchTerm.trim()
+      ? searchService.getAll(searchTerm.trim(), page)
+      : selectedGenre
+        ? genresService.getMoviesByGenre(selectedGenre, page)
+        : moviesService.getAll(page);
 
-        if (selectedGenre) {
-            filtered = filtered.filter(movie => movie.genre_ids.includes(selectedGenre));
-        }
+    request
+      .then(({ data }) => {
+        setMovies(data.results);
+      })
+      .catch((error) => {
+        console.error('Error loading movies:', error);
+        setErrorMessage('Failed to load movies.');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [page, selectedGenre, searchTerm]);
 
-        if (searchTerm) {
-            filtered = filtered.filter(movie => movie.title.toLowerCase().includes(searchTerm.toLowerCase()));
-        }
-
-        setFilteredMovies(filtered);
-    }, [selectedGenre, searchTerm, movies]);
-
-    const movieClick = (movieId: number) => {
-        navigate(`/movies/${movieId}`);
-    };
-
-    return (
-        <div style={moviesListStyle}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                {filteredMovies.map((movie) => (
-                    <MoviesListCard
-                        key={movie.id}
-                        movie={movie}
-                        movieClick={movieClick}
-                        genreDictionary={genres}
-                    />
-                ))}
-            </div>
-            <div>
-                <button onClick={prevPage}>Previous page</button>
-                <span>Current page {page}</span>
-                <button onClick={nextPage}>Next page</button>
-            </div>
+  return (
+    <section className={styles.wrapper}>
+      {isLoading ? (
+        <div className={styles.message}>Loading movies...</div>
+      ) : errorMessage ? (
+        <div className={styles.message}>{errorMessage}</div>
+      ) : movies.length > 0 ? (
+        <div className={styles.grid}>
+          {movies.map((movie) => (
+            <MoviesListCard
+              key={movie.id}
+              movie={movie}
+              genreDictionary={genres}
+            />
+          ))}
         </div>
-    );
-};
+      ) : (
+        <div className={styles.message}>No movies found.</div>
+      )}
 
+      <div className={styles.pagination}>
+        <button
+          type="button"
+          className={styles.pageButton}
+          onClick={prevPage}
+          disabled={page <= 1}
+        >
+          Previous page
+        </button>
+
+        <span className={styles.pageInfo}>Page {page}</span>
+
+        <button
+          type="button"
+          className={styles.pageButton}
+          onClick={nextPage}
+        >
+          Next page
+        </button>
+      </div>
+    </section>
+  );
+};

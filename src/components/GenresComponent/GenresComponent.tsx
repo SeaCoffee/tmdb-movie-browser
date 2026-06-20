@@ -1,61 +1,97 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
-import {genresService} from "../../services/axiosService";
-import {GenreListComponent} from "../GenreListComponent/GenreListComponent";
-import {usePageQuery} from "../../services/pagination";
-import {Movie, Genre} from "../../services/axiosService";
+import { genresService, Genre, Movie } from '../../services/axiosService';
+import { GenreListComponent } from '../GenreListComponent/GenreListComponent';
+import { usePageQuery } from '../../services/pagination';
 
+import styles from './GenresComponent.module.css';
 
 interface MovieGenreProps {
-    genreId: number;
+  genreId: number;
 }
 
 export const MovieGenre: React.FC<MovieGenreProps> = ({ genreId }) => {
+  const { page, prevPage, nextPage } = usePageQuery();
 
-    const {page, prevPage, nextPage} = usePageQuery();
-    const [movies, setMovies] = useState<Movie[]>([]);
-    const [genreDictionary, setGenreDictionary] = useState<{ [key: number]: string }>({});
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        genresService.getAll().then(({data}) => {
-            const dictionary: { [key: number]: string } = {};
-            data.genres.forEach((genre: Genre) => {
-                dictionary[genre.id] = genre.name;
-            });
-            setGenreDictionary(dictionary);
-            console.log(dictionary, 'from movie genre')
-        }).catch(error => {
-            console.error('Error', error);
-        });
-    }, []);
+  const genreDictionary = useMemo(() => {
+    return genres.reduce<Record<number, string>>((acc, genre) => {
+      acc[genre.id] = genre.name;
+      return acc;
+    }, {});
+  }, [genres]);
 
-    useEffect(() => {
-        const pageNumber = page ? parseInt(page, 10) : 1;
-        if (genreId) {
-            genresService.getMoviesByGenre(genreId, pageNumber).then(({data}) => {
-                setMovies(data.results);
-                console.log('Movies from API:', data.results);
-            }).catch(error => {
-                console.error('Error', error);
-            });
-        }
-    }, [genreId, page]);
+  const currentGenreName = genreDictionary[genreId] || 'Selected genre';
 
+  useEffect(() => {
+    genresService
+      .getAll()
+      .then(({ data }) => {
+        setGenres(data.genres);
+      })
+      .catch((error) => {
+        console.error('Error loading genres:', error);
+      });
+  }, []);
 
-    const paginationControls = (
-        <div>
-            <button onClick={prevPage}>Previous</button>
-            <span>Page {page}</span>
-            <button onClick={nextPage}>Next</button>
-        </div>
-    );
+  useEffect(() => {
+    setIsLoading(true);
 
-    console.log('Movies to render in GenreListComponent:', movies);
-    return (
-        <div>
-            <GenreListComponent genreId={genreId} movies={movies} genreDictionary={genreDictionary}/>
-            {paginationControls}
-        </div>
-    );
-}
+    genresService
+      .getMoviesByGenre(genreId, page)
+      .then(({ data }) => {
+        setMovies(data.results);
+      })
+      .catch((error) => {
+        console.error('Error loading movies by genre:', error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [genreId, page]);
 
+  return (
+    <section className={styles.wrapper}>
+      <header className={styles.header}>
+        <p className={styles.eyebrow}>Genre</p>
+        <h1 className={styles.title}>{currentGenreName}</h1>
+        <p className={styles.subtitle}>
+          Movies filtered by selected TMDB genre.
+        </p>
+      </header>
+
+      {isLoading ? (
+        <div className={styles.message}>Loading movies...</div>
+      ) : (
+        <GenreListComponent
+          movies={movies}
+          genreDictionary={genreDictionary}
+        />
+      )}
+
+      <div className={styles.pagination}>
+        <button
+          type="button"
+          className={styles.pageButton}
+          onClick={prevPage}
+          disabled={page <= 1}
+        >
+          Previous
+        </button>
+
+        <span className={styles.pageInfo}>Page {page}</span>
+
+        <button
+          type="button"
+          className={styles.pageButton}
+          onClick={nextPage}
+        >
+          Next
+        </button>
+      </div>
+    </section>
+  );
+};

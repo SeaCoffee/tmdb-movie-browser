@@ -1,5 +1,5 @@
 {
-  "name": "react2024",
+  "name": "tmdb-movie-browser",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -51,6 +51,7 @@
     "@testing-library/jest-dom": "^6.4.2",
     "@types/css-modules": "^1.0.5",
     "@types/jest": "^29.5.12",
+    "@types/node": "^26.0.0",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
     "@types/react-redux": "^7.1.33",

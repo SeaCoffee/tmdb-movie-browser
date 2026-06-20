@@ -1,39 +1,79 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import {PosterPreview} from "../PosterPreview/PosterPreview";
-import {StarsRating} from "../StarsRatingComponent/StarsRatingComponent";
-import {GenreBadge} from "../GenreBeigeComponent/GenreBeigeComponent";
-import {GenreDictionary} from "../GenreListComponent/GenreListComponent";
-import {Movie} from "../../services/axiosService";
+import { PosterPreview } from '../PosterPreview/PosterPreview';
+import { StarsRating } from '../StarsRatingComponent/StarsRatingComponent';
+import { GenreBadge } from '../GenreBeigeComponent/GenreBeigeComponent';
+import { Movie } from '../../services/axiosService';
+
+import styles from './MovieListCardComponent.module.css';
 
 interface MoviesListCardProps {
-    movie: Movie;
-    genreDictionary: GenreDictionary;
-    movieClick?: (movieId: number) => void;
+  movie: Movie;
+  genreDictionary: Record<number, string>;
+  movieClick?: (movieId: number) => void;
 }
 
-export const MoviesListCard: React.FC<MoviesListCardProps> = ({ movie, genreDictionary,  movieClick }) => {
-    const navigate = useNavigate();
+export const MoviesListCard: React.FC<MoviesListCardProps> = ({
+  movie,
+  genreDictionary,
+  movieClick,
+}) => {
+  const navigate = useNavigate();
 
-    const handleClick = () => {
-        navigate(`/movie-details/${movie.id}`, { replace: true });
-    };
+  const handleClick = () => {
+    if (movieClick) {
+      movieClick(movie.id);
+      return;
+    }
 
-    return (
-        <div onClick={handleClick} style={{ width: '24%', margin: '0.5%', cursor: 'pointer', boxSizing: 'border-box' }}>
-            <PosterPreview imageUrl={movie.poster_path} />
-            <div>
-                <h3>{movie.title}</h3>
-                <StarsRating rating={movie.vote_average} />
-                <div>
-                    {movie.genre_ids ? movie.genre_ids.map((genreId: number) => (
-                        <GenreBadge key={genreId} genreId={genreId} genreDictionary={genreDictionary} />
-                    )) : <p>Not found</p>}
-                </div>
-                <p>{movie.overview}</p>
-            </div>
+    navigate(`/movie-details/${movie.id}`);
+  };
+
+  const releaseYear = movie.release_date
+    ? movie.release_date.slice(0, 4)
+    : '—';
+
+  const shortOverview =
+    movie.overview || 'No description available for this movie.';
+
+  return (
+    <button
+      type="button"
+      className={styles.card}
+      onClick={handleClick}
+    >
+      <div className={styles.posterWrap}>
+        <PosterPreview
+          imageUrl={movie.poster_path}
+          alt={movie.title}
+        />
+
+        <div className={styles.posterOverlay}>
+          <span className={styles.year}>{releaseYear}</span>
+          <StarsRating rating={movie.vote_average} />
         </div>
-    );
-};
+      </div>
 
+      <div className={styles.body}>
+        <h3 className={styles.title}>{movie.title}</h3>
+
+        <div className={styles.genres}>
+          {movie.genre_ids && movie.genre_ids.length > 0 ? (
+            movie.genre_ids.slice(0, 3).map((genreId) => (
+              <GenreBadge
+                key={genreId}
+                genreId={genreId}
+                genreDictionary={genreDictionary}
+              />
+            ))
+          ) : (
+            <span className={styles.muted}>Genres unknown</span>
+          )}
+        </div>
+
+        <p className={styles.overview}>{shortOverview}</p>
+      </div>
+    </button>
+  );
+};

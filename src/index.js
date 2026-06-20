@@ -1,12 +1,23 @@
-import { jsx as _jsx } from "react/jsx-runtime";
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { RouterProvider } from "react-router-dom";
-import { router } from "./router";
-import { ThemeProvider } from "./contetxt/ThemeContext";
+import { RouterProvider } from 'react-router-dom';
+
+import { ThemeProvider } from './components/context/ThemeContext';
+import { router } from './router';
+
 import 'bootstrap/dist/css/bootstrap.min.css';
-var rootElement = document.getElementById('root');
-if (rootElement) {
-    var root = ReactDOM.createRoot(rootElement);
-    root.render(_jsx(React.StrictMode, { children: _jsx(ThemeProvider, { children: _jsx(RouterProvider, { router: router }) }) }));
+import './styles/global.css';
+
+const rootElement = document.getElementById('root');
+
+if (!rootElement) {
+  throw new Error('Root element was not found.');
 }
+
+ReactDOM.createRoot(rootElement).render(
+  <React.StrictMode>
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  </React.StrictMode>,
+);
